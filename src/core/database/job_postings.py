@@ -12,7 +12,7 @@ def _get_db_connection():
   return conn
 
 
-def init_db():
+def init_job_postings_db():
   """Initializes the database and creates tables if they don't exist."""
   print("--- Initializing Storage ---")
   with _get_db_connection() as conn:
