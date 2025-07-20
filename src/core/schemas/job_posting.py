@@ -25,3 +25,18 @@ class JobPostingList(BaseModel):
   """A list of job postings."""
 
   data_list: List[JobPosting]
+
+
+class JobPostingExtractionState(BaseModel):
+  """State for job posting extraction workflow."""
+
+  job_url: str
+  job_posting: Optional[JobPosting] = None
+  html_content: Optional[str] = None
+  markdown_content: Optional[str] = None
+  extraction_content: Optional[str] = None
+  saved_file_path: Optional[str] = None
+  success: bool = False
+  error_message: Optional[str] = None
+  user_id: Optional[int] = None
+  job_posting_id: Optional[int] = None

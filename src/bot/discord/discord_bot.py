@@ -2,12 +2,13 @@ import logging
 import discord
 from discord.ext import commands
 from src.core.llm.llm_handler import get_general_llm_response, get_job_ai_response
-from core.database.job_postings import get_latest_job_postings
-from core.database.users import save_user, get_user_by_id, update_user
+from src.core.database.job_postings import get_latest_job_postings
+from src.core.database.users import save_user, get_user_by_id, update_user
 from src.core.schemas.user import User
 import os
 import aiohttp
 from src.core.services.resume_maker.source import upload_resume
+import re
 
 # --- Bot Configuration ---
 BOT_COMMAND_PREFIX = "!"
@@ -58,9 +59,6 @@ async def on_ready():
     print(f"Logged in as {bot.user.name} ({bot.user.id})")
   print("Bot is ready!")
 
-  # Load cogs
-  await bot.load_extension("src.bot.tasks.job_notifier")
-
 
 @bot.command(name="최신공고")
 async def latest_jobs(ctx: commands.Context, limit: int = 5):
@@ -88,12 +86,12 @@ async def portfolio(ctx: commands.Context):
   """Handles portfolio file uploads and saves them to resume_sources."""
   try:
     # Ensure user is in the database
-    user = get_user_by_id(ctx.author.id)
+    user = get_user_by_id(ctx.author.name)
     if not user:
-      new_user = User(id=ctx.author.id, name=ctx.author.name, short_description=None)
+      new_user = User(id=ctx.author.name, name=ctx.author.name, resume_file=None)
       save_user(new_user)
     elif user.name != ctx.author.name:
-      update_user(ctx.author.id, name=ctx.author.name)
+      update_user(ctx.author.name, name=ctx.author.name)
 
     # Check for attachments
     if not ctx.message.attachments:
@@ -110,7 +108,7 @@ async def portfolio(ctx: commands.Context):
       return
 
     # Download the attachment
-    file_path = f"uploads/{ctx.author.id}_{attachment.filename}"
+    file_path = f"uploads/{ctx.author.name}_{attachment.filename}"
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     async with aiohttp.ClientSession() as session:
       async with session.get(attachment.url) as resp:
@@ -123,7 +121,7 @@ async def portfolio(ctx: commands.Context):
 
     # Call upload_resume function
     try:
-      await upload_resume(file_path, ctx.author.id)
+      await upload_resume(file_path, ctx.author.name)
       await ctx.send("포트폴리오가 성공적으로 업로드되었습니다!")
     except Exception as e:
       logger.error(f"Error during upload_resume: {e}")
@@ -141,6 +139,66 @@ async def portfolio(ctx: commands.Context):
     await ctx.send("포트폴리오 처리 중 오류가 발생했습니다.")
 
 
+@bot.command(name="채용공고 추가")
+async def add_job_posting(ctx: commands.Context, *, message_content: str):
+  """채용공고 URL을 통해 새로운 채용공고를 추가합니다."""
+  try:
+    # Ensure user is in the database
+    user = get_user_by_id(ctx.author.name)
+    if not user:
+      new_user = User(id=ctx.author.name, name=ctx.author.name, resume_file=None)
+      save_user(new_user)
+    elif user.name != ctx.author.name:
+      update_user(ctx.author.name, name=ctx.author.name)
+
+    # URL 추출
+    url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
+    urls = re.findall(url_pattern, message_content)
+
+    if not urls:
+      await ctx.send(
+        "채용공고 URL을 찾을 수 없습니다. 채용공고 URL을 포함하여 다시 시도해주세요!"
+      )
+      return
+
+    job_url = urls[0]
+
+    await ctx.send("채용공고를 분석하고 있습니다... 잠시만 기다려 주세요.")
+
+    # 채용공고 추출 워크플로우 실행
+    from src.core.services.job_posting_extractor.workflow import (
+      run_job_posting_extractor,
+    )
+
+    result = await run_job_posting_extractor(job_url, ctx.author.name)
+
+    if result.success and result.job_posting:
+      job = result.job_posting
+
+      # 성공 메시지 전송
+      response = f"""
+✅ **채용공고 추가 완료!**
+
+**{job.title}** - {job.company}
+📍 위치: {job.location or "미지정"}
+📅 게시일: {job.posted_at or "지정 안됨"}
+
+**요약 설명:**
+{job.description or "설명이 제공되지 않았습니다."}
+
+**저장된 파일:** {result.saved_file_path or "파일 경로 없음"}
+**원본 URL:** <{job.url}>
+      """
+
+      await send_long_message(ctx, response)
+    else:
+      await ctx.send(f"채용공고 추출 중 오류가 발생했습니다: {result.error_message}")
+
+  except Exception as e:
+    logger.error(f"Error during !채용공고 추가 command: {e}")
+    await ctx.send(f"채용공고 추가 중 오류가 발생했습니다: {str(e)}")
+
+
 @bot.event
 async def on_message(message: discord.Message):
   """Event handler for when a message is sent."""
@@ -149,15 +207,15 @@ async def on_message(message: discord.Message):
 
   # Add or update user in the database
   try:
-    user = get_user_by_id(message.author.id)
+    user = get_user_by_id(message.author.name)
     if user:
       # Update name if user exists
-      if user.name != message.author.name:
-        update_user(message.author.id, name=message.author.name)
+      if user.name != message.author.display_name:
+        update_user(message.author.name, name=message.author.display_name)
     else:
       # Insert new user
       new_user = User(
-        id=message.author.id, name=message.author.name, short_description=None
+        id=message.author.name, name=message.author.display_name, resume_file=None
       )
       save_user(new_user)
   except Exception as e:

@@ -1,11 +1,11 @@
 import asyncio
-from core.database.init import init_db
+from src.core.database.init import init_all_database
 from src.bot.run import run_bot
 
 
 async def main():
   """Initializes the database, schedules jobs, and runs the bot."""
-  init_db()
+  init_all_database()
 
   # Start the bot
   bot_task = asyncio.create_task(run_bot())

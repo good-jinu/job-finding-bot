@@ -18,7 +18,7 @@ def init_job_postings_users_map_db():
     cursor = conn.cursor()
     cursor.execute("""
             CREATE TABLE IF NOT EXISTS job_postings_users_map (
-                user_id INTEGER,
+                user_id TEXT,
                 job_posting_id INTEGER,
                 PRIMARY KEY (user_id, job_posting_id),
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,

@@ -2,9 +2,11 @@ from datetime import datetime
 from langchain_core.prompts import PromptTemplate
 from src.core.llm.providers import get_job_analysis_model
 from src.core.schemas.job_analysis import JobAnalysisState
-from core.database.job_postings import get_unread_job_posting
+from src.core.database.job_postings import get_unread_job_posting
 from src.core.file_storage.paths import FileStoragePaths
 from src.core.file_storage.file_manager import FileManager
+from src.core.database.users import get_all_users
+import random
 
 
 # Initialize file storage
@@ -50,15 +52,34 @@ def load_resume_node(state: JobAnalysisState) -> JobAnalysisState:
   """이력서 파일을 로드합니다."""
   print("--- Loading Resume ---")
 
-  resume_path = file_paths.get_resume_path()
-  resume_content = file_manager.read_file_sync(resume_path)
+  # Get a random user and their resume file
+  users = get_all_users()
+  if not users:
+    state["resume_content"] = "사용자가 없습니다."
+    return state
 
-  if resume_content:
-    state["resume_content"] = resume_content
-    print("Resume loaded successfully")
+  # Select random user if no specific user_id is provided
+  if hasattr(state, "user_id") and state.user_id:
+    selected_user = next((user for user in users if user.id == state.user_id), None)
+    if not selected_user:
+      selected_user = random.choice(users)
   else:
-    state["resume_content"] = "이력서 파일을 찾을 수 없습니다."
-    print("Resume file not found")
+    selected_user = random.choice(users)
+
+  if selected_user and selected_user.resume_file:
+    resume_content = file_manager.read_file_sync(selected_user.resume_file)
+    if resume_content:
+      state["resume_content"] = resume_content
+      state["user_id"] = selected_user.id  # Store which user's resume we used
+      print(
+        f"Loaded resume for user {selected_user.name} from {selected_user.resume_file}"
+      )
+    else:
+      state["resume_content"] = "이력서 파일을 찾을 수 없습니다."
+      print("Resume file not found")
+  else:
+    state["resume_content"] = "이력서가 없습니다."
+    print("No resume file available")
 
   return state
 

@@ -3,9 +3,11 @@ import datetime
 import os
 import discord
 from discord.ext import commands, tasks
-from core.database.job_postings import get_unread_job_posting, mark_job_as_read
-from src.core.services.job_analysis import run_job_analysis
+from src.core.database.job_postings import get_unread_job_posting, mark_job_as_read
+from src.core.services.job_analysis.workflow import run_job_analysis
 from src.bot.discord.discord_bot import send_long_message
+from src.core.database.users import get_all_users
+import random
 
 # KST timezone
 KST = datetime.timezone(datetime.timedelta(hours=9))
@@ -51,14 +53,25 @@ class JobNotifier(commands.Cog):
         print("No unread job postings available.")
         return
 
-      print(f"Analyzing job posting: {job.title} at {job.company}")
+      # Get all users and select a random one
+      users = get_all_users()
+      if not users:
+        print("No users found for resume selection.")
+        return
 
-      # Run job analysis workflow
+      # Select random user
+      selected_user = random.choice(users)
+
+      print(f"Analyzing job posting: {job.title} at {job.company}")
+      print(f"Selected user: {selected_user.name} (ID: {selected_user.id})")
+
+      # Run job analysis workflow with selected user
       analysis_result = await run_job_analysis(
         job_url=job.url,
         job_title=job.title,
         job_company=job.company,
         job_description=job.description,
+        user_id=selected_user.id,  # Pass the selected user ID
       )
 
       # Parse analysis result
@@ -70,15 +83,18 @@ class JobNotifier(commands.Cog):
 
         # Mark the job as read
         await asyncio.to_thread(mark_job_as_read, job.url)
-        print(f"Sent job analysis: {job.title} at {job.company}")
+        print(
+          f"Sent job analysis for {job.title} at {job.company} (user: {selected_user.name})"
+        )
 
       except Exception as e:
         print(f"Error parsing analysis result: {e}")
         # Fallback to simple message
-        fallback_message = f"""📢 **새로운 채용 공고**
+        fallback_message = f"""📢 **새로운 채용 공고 분석**
 
 **💼 {job.title}**
 **🏢 {job.company}**
+**👤 대상 사용자**: {selected_user.name}
 **📍 {job.location}**
 **📅 {job.posted_at}**
 **🔗 URL:** <{job.url}>
@@ -90,7 +106,8 @@ class JobNotifier(commands.Cog):
 
     except Exception as e:
       print(f"Error in hourly job notification task: {e}")
-      await channel.send("채용 공고 분석 중 오류가 발생했습니다.")
+      if channel:
+        await channel.send("채용 공고 분석 중 오류가 발생했습니다.")
 
   @send_hourly_jobs.before_loop
   async def before_send_hourly_jobs(self):

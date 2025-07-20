@@ -49,14 +49,14 @@ general_prompt_template = PromptTemplate(
   input_variables=["default_prompt", "messages"],
   template="""{default_prompt}
 
-    다음 채팅의 답변을 해주세요
-    ---
-    {messages}
+다음 채팅의 답변을 해주세요
+---
+{messages}
 
-    ---
+---
 
-    위의 메세지 다음으로 적합한 태백이의 답변을 작성해주세요.
-    """,
+위의 메세지 다음으로 적합한 태백이의 답변을 작성해주세요.
+""",
 )
 general_llm_chain = general_prompt_template | llm | StrOutputParser()
 

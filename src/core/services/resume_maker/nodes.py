@@ -133,3 +133,32 @@ async def save_resume_node(state: ResumeMakerState) -> None:
         print("❌ Failed to save resume")
   except Exception as e:
     print(f"Error saving resume: {e}")
+
+
+async def update_user_resume_file_node(state: ResumeMakerState) -> Dict:
+  """Updates the user's resume_file field with the path of the generated resume."""
+  try:
+    from src.core.database.users import update_user
+
+    # Get the resume file path
+    file_paths = FileStoragePaths()
+    resume_path = str(file_paths.get_resume_path("generated_resume.md"))
+
+    # Update the user's resume_file field (assuming user_id is available in state)
+    if hasattr(state, "user_id") and state.user_id:
+      update_user(int(state.user_id), resume_file=resume_path)
+      print(f"✅ Updated user {state.user_id}'s resume_file to: {resume_path}")
+    else:
+      # For now, update the first user (or handle appropriately)
+      from src.core.database.users import get_all_users
+
+      users = get_all_users()
+      if users:
+        update_user(int(users[0].id), resume_file=resume_path)
+        print(f"✅ Updated user {users[0].id}'s resume_file to: {resume_path}")
+
+    return {"resume_file": resume_path}
+
+  except Exception as e:
+    print(f"Error updating user resume file: {e}")
+    return {}

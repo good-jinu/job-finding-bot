@@ -208,8 +208,6 @@ def update_content_doc(job_id: int, content_doc: str):
 
 
 if __name__ == "__main__":
-  init_db()
-
   sample_jobs = [
     # JobPosting(
     #     title="title",

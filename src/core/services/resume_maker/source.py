@@ -1,17 +1,11 @@
 import os
 import time
-import random
-import string
 from markitdown import MarkItDown
-from core.database.resume_sources import save_resume_source
+from src.core.database.resume_sources import save_resume_source
 from src.core.schemas.resume_source import ResumeSource
 from src.core.file_storage.file_manager import FileManager
 from src.core.file_storage.paths import FileStoragePaths
-
-
-def generate_random_string(length: int = 4) -> str:
-  """Generates a random string of specified length for filename uniqueness."""
-  return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
+from src.core.services.utils.generate_random_data import generate_random_string
 
 
 async def upload_resume(file_path: str, user_id: int) -> str:
