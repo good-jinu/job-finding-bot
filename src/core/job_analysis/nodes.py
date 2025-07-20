@@ -2,7 +2,7 @@ from datetime import datetime
 from langchain_core.prompts import PromptTemplate
 from src.core.llm.providers import get_job_analysis_model
 from src.core.schemas.job_analysis import JobAnalysisState
-from src.core.database.db_handler import get_unread_job_posting
+from core.database.job_postings import get_unread_job_posting
 from src.core.file_storage.paths import FileStoragePaths
 from src.core.file_storage.file_manager import FileManager
 

@@ -5,7 +5,7 @@ import os
 import discord
 from discord.ext import commands, tasks
 
-from src.core.database.db_handler import get_unread_job_posting, mark_job_as_read
+from core.database.job_postings import get_unread_job_posting, mark_job_as_read
 from src.core.job_analysis import run_job_analysis
 from src.bot.discord.discord_bot import send_long_message
 

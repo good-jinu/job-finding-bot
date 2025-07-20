@@ -2,7 +2,7 @@ import logging
 import discord
 from discord.ext import commands
 from src.core.llm.llm_handler import get_general_llm_response, get_job_ai_response
-from src.core.database.db_handler import get_latest_job_postings
+from core.database.job_postings import get_latest_job_postings
 
 # --- Bot Configuration ---
 BOT_COMMAND_PREFIX = "!"

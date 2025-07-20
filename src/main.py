@@ -1,5 +1,5 @@
 import asyncio
-from src.core.database.db_handler import init_db
+from core.database.job_postings import init_db
 from src.bot.run import run_bot
 
 

@@ -29,17 +29,10 @@ def init_db():
                 posted_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 read_at TIMESTAMP NULL,
+                read_at TIMESTAMP NULL,
                 content_doc TEXT
             )
         """)
-
-    # Add read_at column if it doesn't exist (for existing databases)
-    try:
-      cursor.execute("ALTER TABLE job_postings ADD COLUMN read_at TIMESTAMP NULL")
-    except sqlite3.OperationalError:
-      # Column already exists
-      pass
-
     conn.commit()
   print("Storage initialized successfully.")
 

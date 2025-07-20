@@ -16,12 +16,12 @@ This bot automates job search activities, providing job posting notifications an
 1.  Set up your Discord bot token and notification channel ID in the `.env` file.
 2.  Install the required Python packages:
     ```sh
-    pip install -r requirements.txt
+    uv sync
     ```
 3.  The database and file storage will be initialized automatically.
 4.  Run the Discord bot:
     ```sh
-    python src/main.py
+    uv run python -m src.main
     ```
 5.  You can use AI features in Discord.
 

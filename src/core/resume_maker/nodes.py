@@ -1,258 +1,135 @@
-from src.core.schemas.resume_maker import ResumeMakerState, ResumeSection
+from typing import Dict
+from src.core.schemas.resume_maker import ResumeMakerState
 from src.core.file_storage.file_manager import FileManager
 from src.core.file_storage.paths import FileStoragePaths
+from src.core.llm.providers import get_resume_generation_model
 
 
-async def load_resume_sources_node(state: ResumeMakerState) -> ResumeMakerState:
-  """Load source files from resume_sources directory."""
-  try:
-    paths = FileStoragePaths()
-    resume_sources_dir = paths.resume_sources_dir
-    file_manager = FileManager()
+async def load_resume_sources_node(state: ResumeMakerState) -> Dict:
+    """Load source file names from resume_sources directory."""
+    try:
+        paths = FileStoragePaths()
+        resume_sources_dir = paths.resume_sources_dir
+        source_files = []
 
-    source_files = []
-    source_contents = {}
+        if resume_sources_dir.exists():
+            for file_path in resume_sources_dir.iterdir():
+                if file_path.is_file():
+                    source_files.append(str(file_path))  # 전체 경로 저장
+        
+        print(f"Loaded {len(source_files)} source files.")
+        return {"source_files": source_files}
 
-    # Get all files in resume_sources directory
-    if resume_sources_dir.exists():
-      for file_path in resume_sources_dir.iterdir():
-        if file_path.is_file():
-          filename = file_path.name
-          content = await file_manager.read_file_async(file_path)
-          if content:
-            source_files.append(filename)
-            source_contents[filename] = content
-
-    return ResumeMakerState(
-      source_files=source_files,
-      source_contents=source_contents,
-      resume_sections=state.resume_sections,
-      final_resume=state.final_resume,
-      job_target=state.job_target,
-    )
-
-  except Exception as e:
-    print(f"Error loading resume sources: {e}")
-    return state
+    except Exception as e:
+        print(f"Error loading resume sources: {e}")
+        return {}
 
 
-async def process_resume_sources_node(state: ResumeMakerState) -> ResumeMakerState:
-  """Process loaded resume sources and extract relevant information."""
-  try:
-    resume_sections = []
+async def plan_resume_node(state: ResumeMakerState) -> Dict:
+    """Use LLM to create a detailed plan for writing the resume based on job target."""
+    try:
+        file_manager = FileManager()
+        contents = []
+        for file_path in state.source_files:
+            content = await file_manager.read_file_async(file_path)
+            if content:
+                contents.append(content)
+        
+        full_content = "\n\n---\n\n".join(contents)
+        
+        llm = get_resume_generation_model()
+        
+        # Create detailed planning prompt
+        planning_prompt = f"""Based on the following source materials and job target, create a comprehensive plan for writing a professional resume.
 
-    # Extract information from source files
-    content = "\n".join(state.source_contents.values())
+Job Target: {state.job_target or 'General position'}
 
-    # Basic section extraction from content
-    sections = [
-      ("Professional Summary", extract_summary(content)),
-      ("Experience", extract_experience(content)),
-      ("Skills", extract_skills(content)),
-      ("Education", extract_education(content)),
-      ("Projects", extract_projects(content)),
-    ]
+Source Materials:
+{full_content}
 
-    for idx, (title, content) in enumerate(sections):
-      if content.strip():
-        resume_sections.append(ResumeSection(title=title, content=content, order=idx))
+Create a detailed plan that includes:
+1. Key competencies and skills that should be emphasized for this job target
+2. Important achievements and experiences to highlight
+3. Specific keywords and terminology relevant to the role
+4. Recommended resume structure and sections
+5. Tailoring strategies for this specific position
+6. Quantifiable achievements to focus on
+7. Professional summary points
 
-    return ResumeMakerState(
-      source_files=state.source_files,
-      source_contents=state.source_contents,
-      resume_sections=resume_sections,
-      final_resume=state.final_resume,
-      job_target=state.job_target,
-    )
+Be specific and actionable. Focus on what makes this candidate stand out for this particular role."""
 
-  except Exception as e:
-    print(f"Error processing resume sources: {e}")
-    return state
+        plan_response = await llm.ainvoke(planning_prompt)
+        plan_to_write_resume = plan_response.content
+        
+        print("Generated detailed resume plan using LLM.")
+        return {"plan_to_write_resume": plan_to_write_resume}
 
-
-async def generate_resume_node(state: ResumeMakerState) -> ResumeMakerState:
-  """Generate the final resume from processed sections."""
-  try:
-    # Sort sections by order
-    sorted_sections = sorted(state.resume_sections, key=lambda x: x.order)
-
-    # Build final resume
-    resume_parts = []
-
-    # Header
-    header = f"# Resume for {state.job_target}" if state.job_target else "# Resume"
-    resume_parts.append(header)
-    resume_parts.append("=" * len(header))
-    resume_parts.append("")
-
-    # Add each section
-    for section in sorted_sections:
-      if section.content.strip():
-        resume_parts.append(f"## {section.title}")
-        resume_parts.append("")
-        resume_parts.append(section.content)
-        resume_parts.append("")
-
-    final_resume = "\n".join(resume_parts)
-
-    # Update output file path
-    paths = FileStoragePaths()
-    output_file = str(paths.get_output_report_path("generated_resume"))
-
-    return ResumeMakerState(
-      source_files=state.source_files,
-      source_contents=state.source_contents,
-      resume_sections=state.resume_sections,
-      final_resume=final_resume,
-      job_target=state.job_target,
-      output_file=output_file,
-    )
-
-  except Exception as e:
-    print(f"Error generating resume: {e}")
-    return state
+    except Exception as e:
+        print(f"Error planning resume with LLM: {e}")
+        return {}
 
 
-async def save_resume_node(state: ResumeMakerState) -> ResumeMakerState:
-  """Save the generated resume to file."""
-  try:
-    if state.final_resume:
-      file_paths = FileStoragePaths()
-      file_manager = FileManager()
+async def generate_resume_node(state: ResumeMakerState) -> Dict:
+    """Use LLM to generate a structured, professional resume based on the plan."""
+    try:
+        file_manager = FileManager()
+        contents = []
+        for file_path in state.source_files:
+            content = await file_manager.read_file_async(file_path)
+            if content:
+                contents.append(content)
+        
+        full_content = "\n\n---\n\n".join(contents)
+        
+        llm = get_resume_generation_model()
+        
+        # Generate resume prompt
+        resume_prompt = f"""Based on the following source materials and the provided plan, generate a professional, structured resume.
 
-      output_path = file_paths.get_resume_path()
-      result = await file_manager.write_file_async(output_path, state.final_resume)
+Plan to follow:
+{state.plan_to_write_resume}
 
-      if result:
-        print(f"Resume saved to: {output_path}")
-      else:
-        print("Failed to save resume")
+Source Materials:
+{full_content}
 
-    return state
+Job Target: {state.job_target or 'General position'}
 
-  except Exception as e:
-    print(f"Error saving resume: {e}")
-    return state
+Generate a comprehensive, well-formatted resume that:
+1. Uses professional language and formatting
+2. Highlights relevant skills and experiences for the target role
+3. Includes quantifiable achievements and metrics
+4. Follows modern resume best practices
+5. Is ATS-friendly with appropriate keywords
+6. Has clear sections: Summary, Skills, Experience, Education, Projects (if relevant)
+7. Uses bullet points for achievements and responsibilities
+8. Is concise yet comprehensive
 
+Format the resume in Markdown for clarity."""
 
-# Helper functions for content extraction
-def extract_summary(content: str) -> str:
-  """Extract professional summary from content."""
-  lines = content.split("\n")
-  summary_lines = []
-  capture = False
+        resume_response = await llm.ainvoke(resume_prompt)
+        final_resume = resume_response.content
+        
+        print("Generated professional resume using LLM.")
+        return {"final_resume": final_resume}
 
-  for line in lines:
-    line_lower = line.lower().strip()
-    if any(keyword in line_lower for keyword in ["summary", "profile", "about"]):
-      capture = True
-      continue
-
-    if capture and line.strip() and not line.startswith("#") and len(summary_lines) < 3:
-      summary_lines.append(line.strip())
-    elif capture and line.strip() == "" and summary_lines:
-      break
-
-  if not summary_lines:
-    # Fallback to first paragraph
-    paragraphs = content.split("\n\n")
-    for para in paragraphs:
-      if para.strip() and len(para.strip()) > 50:
-        return para.strip()[:500]
-
-  return "\n".join(summary_lines)
+    except Exception as e:
+        print(f"Error generating resume with LLM: {e}")
+        return {}
 
 
-def extract_experience(content: str) -> str:
-  """Extract experience information from content."""
-  lines = content.split("\n")
-  experience_lines = []
-  capture = False
+async def save_resume_node(state: ResumeMakerState) -> None:
+    """Save the generated resume to a file."""
+    try:
+        if state.final_resume:
+            file_paths = FileStoragePaths()
+            file_manager = FileManager()
 
-  for line in lines:
-    line_lower = line.lower().strip()
-    if any(
-      keyword in line_lower for keyword in ["experience", "work history", "employment"]
-    ):
-      capture = True
-      continue
+            output_path = file_paths.get_resume_path("generated_resume.md")
+            result = await file_manager.write_file_async(output_path, state.final_resume)
 
-    if capture:
-      if line.strip() and (
-        line.startswith("-") or line.startswith("*") or line.startswith("•")
-      ):
-        experience_lines.append(line.strip())
-      elif line.strip() == "" and experience_lines:
-        break
-
-  return "\n".join(experience_lines)
-
-
-def extract_skills(content: str) -> str:
-  """Extract skills information from content."""
-  lines = content.split("\n")
-  skills_lines = []
-  capture = False
-
-  for line in lines:
-    line_lower = line.lower().strip()
-    if any(keyword in line_lower for keyword in ["skills", "technologies", "tools"]):
-      capture = True
-      continue
-
-    if capture:
-      if line.strip() and (
-        line.startswith("-") or line.startswith("*") or line.startswith("•")
-      ):
-        skills_lines.append(line.strip())
-      elif line.strip() == "" and skills_lines:
-        break
-
-  return "\n".join(skills_lines)
-
-
-def extract_education(content: str) -> str:
-  """Extract education information from content."""
-  lines = content.split("\n")
-  education_lines = []
-  capture = False
-
-  for line in lines:
-    line_lower = line.lower().strip()
-    if any(
-      keyword in line_lower
-      for keyword in ["education", "degree", "university", "college"]
-    ):
-      capture = True
-      continue
-
-    if capture:
-      if line.strip() and not line.startswith("#"):
-        education_lines.append(line.strip())
-      elif line.strip() == "" and education_lines:
-        break
-
-  return "\n".join(education_lines)
-
-
-def extract_projects(content: str) -> str:
-  """Extract projects information from content."""
-  lines = content.split("\n")
-  projects_lines = []
-  capture = False
-
-  for line in lines:
-    line_lower = line.lower().strip()
-    if any(keyword in line_lower for keyword in ["projects", "portfolio"]):
-      capture = True
-      continue
-
-    if capture:
-      if line.strip() and (
-        line.startswith("-") or line.startswith("*") or line.startswith("•")
-      ):
-        projects_lines.append(line.strip())
-      elif line.strip() == "" and projects_lines:
-        break
-
-  return "\n".join(projects_lines)
+            if result:
+                print(f"✅ Resume saved to: {output_path}")
+            else:
+                print("❌ Failed to save resume")
+    except Exception as e:
+        print(f"Error saving resume: {e}")

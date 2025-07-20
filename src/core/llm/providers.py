@@ -8,6 +8,7 @@ SUMMARIZATION_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 AGENT_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 CHAT_MODEL = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
 JOB_ANALYSIS_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+RESUME_GENERATION_MODEL = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
 
 
 def get_chat_model():
@@ -74,6 +75,21 @@ def get_job_analysis_model():
   return ChatDeepInfra(
     model=JOB_ANALYSIS_MODEL,
     temperature=0.8,
+    rate_limiter=limiter,
+    max_tokens=20000,
+    max_retries=3,
+  )
+
+def get_resume_generation_model():
+  """Returns the configured resume generation model."""
+  limiter = InMemoryRateLimiter(
+    requests_per_second=1,
+    check_every_n_seconds=1,
+    max_bucket_size=10,
+  )
+  return ChatDeepInfra(
+    model=RESUME_GENERATION_MODEL,
+    temperature=0.99,
     rate_limiter=limiter,
     max_tokens=20000,
     max_retries=3,
