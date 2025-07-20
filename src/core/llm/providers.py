@@ -80,6 +80,7 @@ def get_job_analysis_model():
     max_retries=3,
   )
 
+
 def get_resume_generation_model():
   """Returns the configured resume generation model."""
   limiter = InMemoryRateLimiter(

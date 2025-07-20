@@ -2,8 +2,7 @@ import sqlite3
 from typing import List, Optional
 from src.core.schemas.job_posting import JobPosting
 from datetime import datetime
-
-DB_FILE = ".sqlite/job_listings.db"
+from src.core.database.config import DB_FILE
 
 
 def _get_db_connection():
@@ -28,7 +27,6 @@ def init_db():
                 url TEXT NOT NULL UNIQUE,
                 posted_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                read_at TIMESTAMP NULL,
                 read_at TIMESTAMP NULL,
                 content_doc TEXT
             )

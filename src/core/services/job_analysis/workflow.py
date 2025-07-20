@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from src.core.schemas.job_analysis import JobAnalysisState
-from src.core.job_analysis.nodes import (
+from src.core.services.job_analysis.nodes import (
   scrape_job_details_node,
   load_resume_node,
   analyze_job_fit_node,
