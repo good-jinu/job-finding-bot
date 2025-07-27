@@ -1,4 +1,6 @@
-from typing import TypedDict, List, Any, Optional
+from typing import TypedDict, List, Optional
+
+from src.core.schemas.job_posting import JobPosting
 
 
 class JobSearchState(TypedDict):
@@ -6,4 +8,4 @@ class JobSearchState(TypedDict):
   resume_content: Optional[str]
   job_keywords: List[str]
   job_urls: List[str]
-  scraped_results: List[Any]  # List of job posting extraction results
+  scraped_results: List[JobPosting]

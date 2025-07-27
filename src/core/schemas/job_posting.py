@@ -9,13 +9,13 @@ class JobPosting(BaseModel):
     default=None, description="The id of the job posting database"
   )
   title: str = Field(description="The title of the job posting")
-  company: str = Field(description="The name of the company")
-  location: str = Field(description="The location of the job")
-  description: str = Field(description="A description of the job")
+  company: Optional[str] = Field(default="", description="The name of the company")
+  location: Optional[str] = Field(default="", description="The location of the job")
+  description: Optional[str] = Field(default="", description="A description of the job")
   posted_at: Optional[str] = Field(
-    description="The date and time the job was posted. e.g. 2025-07-20"
+    default=None, description="The date and time the job was posted. e.g. 2025-07-20"
   )
-  url: str = Field(description="The URL to the job posting")
+  url: Optional[str] = Field(default="", description="The URL to the job posting")
   content_doc: Optional[str] = Field(
     default=None, description="Path to the file containing the job description text"
   )
@@ -24,8 +24,10 @@ class JobPosting(BaseModel):
 class JobPostingList(BaseModel):
   """A list of job postings."""
 
-  data_list: List[JobPosting]
-
+  jobs: List[JobPosting] = Field(
+      default_factory=list,
+      description="A list of job posting objects."
+  )
 
 class JobPostingExtractionState(BaseModel):
   """State for job posting extraction workflow."""

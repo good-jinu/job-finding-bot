@@ -198,17 +198,14 @@ async def add_job_posting(ctx: commands.Context):
     result_state = await run_job_search_workflow(user_id)
 
     scraped_results = result_state.get("scraped_results", [])
-    successful_postings = [
-      res for res in scraped_results if res["success"] and res["job_posting"]
-    ]
+    successful_postings = [res for res in scraped_results if res.id is not None]
 
     if not successful_postings:
       await ctx.send("관련 채용공고를 찾지 못했거나, 분석에 실패했습니다.")
       return
 
     response = "✅ **다음 채용공고를 성공적으로 추가했습니다!**\n"
-    for i, res in enumerate(successful_postings):
-      job = res["job_posting"]
+    for i, job in enumerate(successful_postings):
       response += f"\n**{i + 1}. {job.title}** - {job.company}\n"
       response += f"   URL: <{job.url}>\n"
 

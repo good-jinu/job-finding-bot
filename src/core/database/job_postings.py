@@ -52,10 +52,13 @@ def _parse_posted_at(posted_at: Optional[str]) -> Optional[str]:
     return posted_at
 
 
-def save_job_postings(jobs: List[JobPosting]):
-  """Saves a list of job postings to the database, ignoring duplicates."""
+def save_job_postings(jobs: List[JobPosting]) -> List[JobPosting]:
+  """Saves a list of job postings to the database, ignoring duplicates, and returns the saved postings with their IDs."""
   if not jobs:
-    return
+    return []
+
+  saved_jobs = []
+  urls = [job.url for job in jobs if job.url]
 
   with _get_db_connection() as conn:
     cursor = conn.cursor()
@@ -77,6 +80,33 @@ def save_job_postings(jobs: List[JobPosting]):
         ),
       )
     conn.commit()
+
+    if urls:
+      # Fetch the rows that were just inserted or already existed
+      placeholders = ",".join("?" for _ in urls)
+      cursor.execute(
+        f"""
+                SELECT id, title, company, location, description, url, posted_at, created_at, content_doc
+                FROM job_postings
+                WHERE url IN ({placeholders})
+                """,
+        urls,
+      )
+      rows = cursor.fetchall()
+      for row in rows:
+        saved_jobs.append(
+          JobPosting(
+            id=row["id"],
+            title=row["title"],
+            company=row["company"],
+            location=row["location"],
+            posted_at=row["posted_at"],
+            description=row["description"],
+            url=row["url"],
+            content_doc=row["content_doc"],
+          )
+        )
+  return saved_jobs
 
 
 def get_unread_job_posting() -> Optional[JobPosting]:
@@ -207,7 +237,23 @@ def update_content_doc(job_id: int, content_doc: str):
     print(f"content_doc updated for job_id: {job_id}")
 
 
+def delete_all_job_postings():
+  """Deletes all records from the job_postings table."""
+  with _get_db_connection() as conn:
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM job_postings")
+    conn.commit()
+  print("All job postings have been deleted.")
+
+
 if __name__ == "__main__":
+  # Initialize the database
+  init_job_postings_db()
+
+  # Delete all existing job postings for a clean run
+  delete_all_job_postings()
+
+  # Sample job postings for testing
   sample_jobs = [
     # JobPosting(
     #     title="title",
@@ -220,6 +266,15 @@ if __name__ == "__main__":
     # )
   ]
 
-  save_job_postings(sample_jobs)
+  # Save sample job postings and get their IDs
+  if sample_jobs:
+    saved_jobs = save_job_postings(sample_jobs)
+    print("샘플 채용공고가 저장되었습니다.")
+    print("저장된 공고:")
+    for job in saved_jobs:
+      print(f"  - ID: {job.id}, Title: {job.title}, URL: {job.url}")
+  else:
+    print("저장할 샘플 채용공고가 없습니다.")
+
+  # Reset the 'read_at' status for all job postings
   reset_all_read_at()
-  print("샘플 채용공고가 저장되었습니다.")
