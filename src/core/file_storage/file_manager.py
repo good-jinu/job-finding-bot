@@ -24,9 +24,11 @@ class FileManager:
       print(f"Error reading file {file_path}: {e}")
       return None
 
-  def read_file_sync(self, file_path: Path) -> Optional[str]:
+  def read_file_sync(self, file_path: Path | str) -> Optional[str]:
     """Read file content synchronously."""
     try:
+      if isinstance(file_path, str):
+        file_path = Path(file_path)
       if not file_path.exists():
         return None
 

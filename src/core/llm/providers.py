@@ -8,7 +8,7 @@ SUMMARIZATION_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 AGENT_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 CHAT_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 JOB_ANALYSIS_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
-RESUME_GENERATION_MODEL = "meta-llama/Llama-4-Scout-17B-16E-Instruct"
+RESUME_GENERATION_MODEL = "gemini-2.5-flash-lite-preview-06-17"
 
 
 def get_chat_model():
@@ -92,7 +92,7 @@ def get_resume_generation_model():
     check_every_n_seconds=1,
     max_bucket_size=10,
   )
-  return ChatDeepInfra(
+  return ChatGoogleGenerativeAI(
     model=RESUME_GENERATION_MODEL,
     temperature=0.99,
     rate_limiter=limiter,

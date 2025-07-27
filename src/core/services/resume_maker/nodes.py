@@ -3,6 +3,7 @@ from src.core.schemas.resume_maker import ResumeMakerState
 from src.core.file_storage.file_manager import FileManager
 from src.core.file_storage.paths import FileStoragePaths
 from src.core.llm.providers import get_resume_generation_model
+from src.core.database.users import update_user
 
 
 async def load_resume_sources_node(state: ResumeMakerState) -> Dict:
@@ -15,7 +16,7 @@ async def load_resume_sources_node(state: ResumeMakerState) -> Dict:
     if resume_sources_dir.exists():
       for file_path in resume_sources_dir.iterdir():
         if file_path.is_file():
-          source_files.append(str(file_path))  # 전체 경로 저장
+          source_files.append(file_path)  # 전체 경로 저장
 
     print(f"Loaded {len(source_files)} source files.")
     return {"source_files": source_files}
@@ -124,7 +125,7 @@ async def save_resume_node(state: ResumeMakerState) -> None:
       file_paths = FileStoragePaths()
       file_manager = FileManager()
 
-      output_path = file_paths.get_resume_path("generated_resume.md")
+      output_path = file_paths.get_resume_path(f"{state.user_id}_resume.md")
       result = await file_manager.write_file_async(output_path, state.final_resume)
 
       if result:
@@ -138,24 +139,16 @@ async def save_resume_node(state: ResumeMakerState) -> None:
 async def update_user_resume_file_node(state: ResumeMakerState) -> Dict:
   """Updates the user's resume_file field with the path of the generated resume."""
   try:
-    from src.core.database.users import update_user
-
     # Get the resume file path
     file_paths = FileStoragePaths()
-    resume_path = str(file_paths.get_resume_path("generated_resume.md"))
+    resume_path = str(file_paths.get_resume_path(f"{state.user_id}_resume.md"))
 
     # Update the user's resume_file field (assuming user_id is available in state)
     if hasattr(state, "user_id") and state.user_id:
-      update_user(int(state.user_id), resume_file=resume_path)
+      update_user(state.user_id, resume_file=resume_path)
       print(f"✅ Updated user {state.user_id}'s resume_file to: {resume_path}")
     else:
-      # For now, update the first user (or handle appropriately)
-      from src.core.database.users import get_all_users
-
-      users = get_all_users()
-      if users:
-        update_user(int(users[0].id), resume_file=resume_path)
-        print(f"✅ Updated user {users[0].id}'s resume_file to: {resume_path}")
+      raise ValueError("User ID is required to update resume file.")
 
     return {"resume_file": resume_path}
 

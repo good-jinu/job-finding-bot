@@ -8,11 +8,11 @@ from src.core.schemas.user import User
 import os
 import aiohttp
 from src.core.services.resume_maker.source import upload_resume
-import re
+from src.core.services.resume_maker.workflow import run_resume_maker
 
 # --- Bot Configuration ---
 BOT_COMMAND_PREFIX = "!"
-DISCORD_MESSAGE_LIMIT = 5000
+DISCORD_MESSAGE_LIMIT = 2000
 
 # Initialize the Discord client with necessary intents
 intents = discord.Intents.default()
@@ -81,7 +81,7 @@ async def latest_jobs(ctx: commands.Context, limit: int = 5):
     await ctx.send("최신 채용 공고를 가져오는 중 오류가 발생했습니다.")
 
 
-@bot.command(name="포트폴리오 추가")
+@bot.command(name="포트폴리오")
 async def portfolio(ctx: commands.Context):
   """Handles portfolio file uploads and saves them to resume_sources."""
   try:
@@ -139,60 +139,80 @@ async def portfolio(ctx: commands.Context):
     await ctx.send("포트폴리오 처리 중 오류가 발생했습니다.")
 
 
-@bot.command(name="채용공고 추가")
-async def add_job_posting(ctx: commands.Context, *, message_content: str):
-  """채용공고 URL을 통해 새로운 채용공고를 추가합니다."""
+@bot.command(name="이력서제작")
+async def create_resume(ctx: commands.Context, *, job_target: str = ""):
+  """Handles resume creation requests."""
   try:
     # Ensure user is in the database
     user = get_user_by_id(ctx.author.name)
     if not user:
       new_user = User(id=ctx.author.name, name=ctx.author.name, resume_file=None)
       save_user(new_user)
-    elif user.name != ctx.author.name:
-      update_user(ctx.author.name, name=ctx.author.name)
 
-    # URL 추출
-    url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
-    urls = re.findall(url_pattern, message_content)
+    # Validate job_target
+    if not job_target.strip():
+      await ctx.send("사용법: `!이력서제작 [직무명]` (예: `!이력서제작 웹개발자`)")
+      return
 
-    if not urls:
+    # Create resume using the workflow
+    await ctx.send(f"이력서 제작을 시작합니다... 직무: **{job_target}**")
+
+    result = await run_resume_maker(
+      job_target=job_target.strip(), user_id=ctx.author.name
+    )
+
+    if result:
       await ctx.send(
-        "채용공고 URL을 찾을 수 없습니다. 채용공고 URL을 포함하여 다시 시도해주세요!"
+        f"✅ 이력서 제작이 완료되었습니다!\n\n**제작된 이력서 정보:**\n- 직무: {job_target}\n이력서내용:"
+      )
+      await send_long_message(ctx, result["final_resume"])
+    else:
+      await ctx.send("이력서 제작 중 오류가 발생했습니다.")
+
+  except Exception as e:
+    logger.error(f"Error during resume creation: {e}")
+    await ctx.send(f"이력서 제작 중 오류가 발생했습니다: {str(e)}")
+
+
+@bot.command(name="채용공고탐색")
+async def add_job_posting(ctx: commands.Context):
+  """사용자의 이력서를 기반으로 관련 채용공고를 검색하고 추가합니다."""
+  try:
+    user_id = ctx.author.name
+    user = get_user_by_id(user_id)
+
+    # Check if user has a resume
+    if not user or not user.resume_file:
+      await ctx.send(
+        "이력서가 등록되지 않았습니다. `!포트폴리오 추가` 명령어를 사용하여 먼저 이력서를 등록해주세요."
       )
       return
 
-    job_url = urls[0]
-
-    await ctx.send("채용공고를 분석하고 있습니다... 잠시만 기다려 주세요.")
-
-    # 채용공고 추출 워크플로우 실행
-    from src.core.services.job_posting_extractor.workflow import (
-      run_job_posting_extractor,
+    await ctx.send(
+      "이력서를 기반으로 최적의 채용공고를 검색하고 있습니다... 잠시만 기다려 주세요."
     )
 
-    result = await run_job_posting_extractor(job_url, ctx.author.name)
+    # Import and run the new job search workflow
+    from src.core.services.job_search.workflow import run_job_search_workflow
 
-    if result.success and result.job_posting:
-      job = result.job_posting
+    result_state = await run_job_search_workflow(user_id)
 
-      # 성공 메시지 전송
-      response = f"""
-✅ **채용공고 추가 완료!**
+    scraped_results = result_state.get("scraped_results", [])
+    successful_postings = [
+      res for res in scraped_results if res["success"] and res["job_posting"]
+    ]
 
-**{job.title}** - {job.company}
-📍 위치: {job.location or "미지정"}
-📅 게시일: {job.posted_at or "지정 안됨"}
+    if not successful_postings:
+      await ctx.send("관련 채용공고를 찾지 못했거나, 분석에 실패했습니다.")
+      return
 
-**요약 설명:**
-{job.description or "설명이 제공되지 않았습니다."}
+    response = "✅ **다음 채용공고를 성공적으로 추가했습니다!**\n"
+    for i, res in enumerate(successful_postings):
+      job = res["job_posting"]
+      response += f"\n**{i + 1}. {job.title}** - {job.company}\n"
+      response += f"   URL: <{job.url}>\n"
 
-**저장된 파일:** {result.saved_file_path or "파일 경로 없음"}
-**원본 URL:** <{job.url}>
-      """
-
-      await send_long_message(ctx, response)
-    else:
-      await ctx.send(f"채용공고 추출 중 오류가 발생했습니다: {result.error_message}")
+    await send_long_message(ctx, response)
 
   except Exception as e:
     logger.error(f"Error during !채용공고 추가 command: {e}")
@@ -204,6 +224,8 @@ async def on_message(message: discord.Message):
   """Event handler for when a message is sent."""
   if message.author.bot:
     return
+
+  print(f"Received message from {message.author.name}: {message.content}")
 
   # Add or update user in the database
   try:
@@ -220,9 +242,6 @@ async def on_message(message: discord.Message):
       save_user(new_user)
   except Exception as e:
     logger.error(f"Error handling user in database: {e}")
-
-  # Process commands first
-  await bot.process_commands(message)
 
   # If the message is not a command, treat it as a general conversation
   if not message.content.startswith(BOT_COMMAND_PREFIX):
@@ -262,3 +281,7 @@ async def on_message(message: discord.Message):
       except Exception as e:
         logger.error(f"An error occurred during general message handling: {e}")
         await message.channel.send("An unexpected error occurred.")
+
+  print(f"Processed command from {message.author.name}: {message.content}")
+  # Process commands after handling the message
+  await bot.process_commands(message)

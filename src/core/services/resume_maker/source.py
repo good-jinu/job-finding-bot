@@ -8,13 +8,13 @@ from src.core.file_storage.paths import FileStoragePaths
 from src.core.services.utils.generate_random_data import generate_random_string
 
 
-async def upload_resume(file_path: str, user_id: int) -> str:
+async def upload_resume(file_path: str, user_id: str) -> str:
   """
   Converts a resume file to Markdown, saves it, and stores metadata in the database.
 
   Args:
       file_path (str): Path to the input resume file (e.g., PDF or DOCX).
-      user_id (int): ID of the user uploading the resume.
+      user_id (str): ID of the user uploading the resume.
 
   Returns:
       str: The converted Markdown content.
@@ -50,7 +50,7 @@ async def upload_resume(file_path: str, user_id: int) -> str:
     raise ValueError(f"Failed to save Markdown file: {str(e)}")
 
   # Save metadata to resume_sources table
-  resume_source = ResumeSource(user_id=user_id, source_file_name=output_path)
+  resume_source = ResumeSource(user_id=user_id, source_file_name=str(output_path))
   save_resume_source(resume_source)
 
   return markdown_content

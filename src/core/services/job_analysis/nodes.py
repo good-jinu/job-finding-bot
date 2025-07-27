@@ -67,13 +67,12 @@ def load_resume_node(state: JobAnalysisState) -> JobAnalysisState:
     selected_user = random.choice(users)
 
   if selected_user and selected_user.resume_file:
-    resume_content = file_manager.read_file_sync(selected_user.resume_file)
+    resume_path = file_paths.get_resume_path(selected_user.resume_file)
+    resume_content = file_manager.read_file_sync(resume_path)
     if resume_content:
       state["resume_content"] = resume_content
       state["user_id"] = selected_user.id  # Store which user's resume we used
-      print(
-        f"Loaded resume for user {selected_user.name} from {selected_user.resume_file}"
-      )
+      print(f"Loaded resume for user {selected_user.name} from {resume_path}")
     else:
       state["resume_content"] = "이력서 파일을 찾을 수 없습니다."
       print("Resume file not found")

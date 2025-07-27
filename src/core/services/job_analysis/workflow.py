@@ -31,7 +31,11 @@ def build_job_analysis_workflow():
 
 
 async def run_job_analysis(
-  job_url: str, job_title: str, job_company: str, job_description: str = ""
+  job_url: str,
+  job_title: str,
+  job_company: str,
+  job_description: str = "",
+  user_id: str = "",
 ):
   """채용공고 분석을 실행합니다."""
 
@@ -45,6 +49,7 @@ async def run_job_analysis(
     detailed_job_info="",
     analysis_result="",
     report_content="",
+    user_id=user_id,
   )
 
   # 워크플로우 실행

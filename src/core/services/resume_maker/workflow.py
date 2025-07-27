@@ -33,11 +33,12 @@ def build_resume_maker_workflow():
   return workflow.compile()
 
 
-async def run_resume_maker(job_target: str = ""):
+async def run_resume_maker(job_target: str = "", user_id: str = ""):
   """Resume maker를 실행합니다."""
 
   # 초기 상태 설정 (단순화된 State에 맞게 수정)
   initial_state = ResumeMakerState(
+    user_id=user_id,
     job_target=job_target,
   )
 

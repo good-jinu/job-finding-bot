@@ -9,7 +9,7 @@ class ResumeSource(BaseModel):
     default=None,
     description="The unique identifier of the resume source in the database",
   )
-  user_id: int = Field(description="The ID of the associated user")
+  user_id: str = Field(description="The ID of the associated user")
   source_file_name: str = Field(
     description="The name or path of the resume source file"
   )

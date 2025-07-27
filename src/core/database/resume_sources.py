@@ -43,7 +43,7 @@ def save_resume_source(resume_source: ResumeSource):
     return cursor.lastrowid
 
 
-def get_resume_sources_by_user(user_id: int) -> List[ResumeSource]:
+def get_resume_sources_by_user(user_id: str) -> List[ResumeSource]:
   """Fetches all resume sources for a given user."""
   with _get_db_connection() as conn:
     cursor = conn.cursor()

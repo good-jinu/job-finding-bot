@@ -33,7 +33,7 @@ def build_job_posting_extractor_workflow():
   return workflow.compile()
 
 
-async def run_job_posting_extractor(job_url: str, user_id: int):
+async def run_job_posting_extractor(job_url: str, user_id: str):
   """채용공고 추출을 실행합니다."""
 
   # 초기 상태 설정

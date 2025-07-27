@@ -38,5 +38,5 @@ class JobPostingExtractionState(BaseModel):
   saved_file_path: Optional[str] = None
   success: bool = False
   error_message: Optional[str] = None
-  user_id: Optional[int] = None
+  user_id: Optional[str] = None
   job_posting_id: Optional[int] = None

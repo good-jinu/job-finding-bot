@@ -1,4 +1,3 @@
-import aiohttp
 from datetime import datetime
 from langchain_core.prompts import PromptTemplate
 from src.core.llm.providers import get_structured_output_model, get_summarization_model
@@ -9,6 +8,7 @@ from src.core.database.job_postings import save_job_postings
 from src.core.database.job_postings_users_map import save_job_posting_user_map
 from src.core.schemas.job_posting_user_map import JobPostingUserMap
 from src.core.database.job_postings import get_latest_job_postings
+from browser_use import Browser
 import markitdown
 
 # Initialize file storage and utilities
@@ -24,14 +24,17 @@ async def fetch_html_node(
   print("--- Fetching HTML from URL ---")
 
   try:
-    async with aiohttp.ClientSession() as session:
-      async with session.get(state.job_url) as response:
-        if response.status == 200:
-          html_content = await response.text()
-          state.html_content = html_content
-          print(f"Successfully fetched HTML from {state.job_url}")
-        else:
-          raise Exception(f"HTTP {response.status}: Failed to fetch URL")
+    browser = await Browser.async_create()
+    initial_actions = [
+      {
+        "action": "Go to a specific URL",
+        "url": state.job_url,
+      },
+    ]
+    await browser.run(initial_actions=initial_actions)
+    html_content = await browser.get_content()
+    state.html_content = html_content
+    print(f"Successfully fetched HTML from {state.job_url}")
 
   except Exception as e:
     state.error_message = str(e)

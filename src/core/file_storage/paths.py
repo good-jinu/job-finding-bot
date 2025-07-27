@@ -50,7 +50,7 @@ class FileStoragePaths:
   def get_resume_path(self, filename: str = "resume.md") -> Path:
     """Get the full path for a resume file in the output directory."""
     # 생성된 이력서는 output 디렉토리에 저장되도록 경로 수정
-    return self.output_dir / filename
+    return self.input_dir / filename
 
   def get_job_content_path(self, filename: str) -> Path:
     """Get job posting content file path."""
