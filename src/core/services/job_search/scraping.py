@@ -43,31 +43,33 @@ async def collect_job_postings(search_page_url: str) -> List[JobPosting]:
   브라우저로 텍스트를 스크랩한 후 LLM을 사용하여 JobPostingList로 구조화합니다.
   """
   task = (
-      f"현재 페이지({search_page_url})에서 채용 공고 목록을 텍스트로 추출해줘. "
-      "각 공고마다 'title', 'company', 'location', 상세 정보 'url'을 포함해야 해. "
-      "최대한 많은 공고를 수집하기 위해 필요하다면 스크롤을 내려줘. 그런데 딱 한페이지만 스크랩해줘. "
+    f"현재 페이지({search_page_url})에서 채용 공고 목록을 텍스트로 추출해줘. "
+    "각 공고마다 'title', 'company', 'location', 상세 정보 'url'을 포함해야 해. "
+    "최대한 많은 공고를 수집하기 위해 필요하다면 스크롤을 내려줘. 그런데 딱 한페이지만 스크랩해줘. "
   )
 
   agent = Agent(
-      task=task,
-      llm=llm,
-      profile=profile,
-      initial_actions=[{"go_to_url": {"url": search_page_url}}],
+    task=task,
+    llm=llm,
+    profile=profile,
+    initial_actions=[{"go_to_url": {"url": search_page_url}}],
   )
   print(f"Collecting job postings from: {search_page_url}...")
 
   try:
-      history = await agent.run()
-      scraped_text = history.final_result()
+    history = await agent.run()
+    scraped_text = history.final_result()
 
-      if not scraped_text or not scraped_text.strip():
-          print("  -> Agent가 비어있는 최종 결과를 반환했습니다.")
-          return []
+    if not scraped_text or not scraped_text.strip():
+      print("  -> Agent가 비어있는 최종 결과를 반환했습니다.")
+      return []
 
-      # LLM을 사용하여 텍스트를 구조화합니다.
-      structured_llm = get_structured_output_model().with_structured_output(JobPostingList)
-      
-      prompt = f"""다음 텍스트에서 채용 공고 정보를 추출하여 JSON 형식으로 만들어줘.
+    # LLM을 사용하여 텍스트를 구조화합니다.
+    structured_llm = get_structured_output_model().with_structured_output(
+      JobPostingList
+    )
+
+    prompt = f"""다음 텍스트에서 채용 공고 정보를 추출하여 JSON 형식으로 만들어줘.
 각 공고는 'title', 'company', 'location', 'url' 필드를 포함해야 해.
 결과는 'jobs'라는 키를 가진 JSON 객체여야 해.
 
@@ -75,53 +77,55 @@ async def collect_job_postings(search_page_url: str) -> List[JobPosting]:
 {scraped_text}
 ---
 """
-      
-      job_posting_list = await structured_llm.ainvoke(prompt)
 
-      if job_posting_list and hasattr(job_posting_list, "jobs"):
-          print(f"  -> LLM이 {len(job_posting_list.jobs)}개의 공고를 성공적으로 구조화했습니다.")
-          return job_posting_list.jobs
-      else:
-          print("  -> LLM이 텍스트에서 공고를 구조화하지 못했습니다.")
-          return []
+    job_posting_list = await structured_llm.ainvoke(prompt)
+
+    if job_posting_list and hasattr(job_posting_list, "jobs"):
+      print(
+        f"  -> LLM이 {len(job_posting_list.jobs)}개의 공고를 성공적으로 구조화했습니다."
+      )
+      return job_posting_list.jobs
+    else:
+      print("  -> LLM이 텍스트에서 공고를 구조화하지 못했습니다.")
+      return []
 
   except Exception as e:
-      print(f"  -> 공고 수집 중 오류 발생: {e}")
-      return []
+    print(f"  -> 공고 수집 중 오류 발생: {e}")
+    return []
 
 
 async def extract_and_structure_job_detail(detail_url: str) -> Optional[JobPosting]:
-    """
-    채용 공고 상세 페이지에서 상세 내용을 추출하고 JobPosting 객체로 변환합니다.
-    """
-    task = (
-        f"이 채용 공고 페이지({detail_url})의 모든 상세 정보를 마크다운 형식으로 추출해줘. "
-        "포함할 내용: 직무명, 회사명, 근무지역, 채용 상세 내용, 자격 요건, 우대 사항, "
-        "근무 조건, 복리후생, 채용 절차 등 모든 관련 정보를 체계적으로 정리해줘."
-    )
+  """
+  채용 공고 상세 페이지에서 상세 내용을 추출하고 JobPosting 객체로 변환합니다.
+  """
+  task = (
+    f"이 채용 공고 페이지({detail_url})의 모든 상세 정보를 마크다운 형식으로 추출해줘. "
+    "포함할 내용: 직무명, 회사명, 근무지역, 채용 상세 내용, 자격 요건, 우대 사항, "
+    "근무 조건, 복리후생, 채용 절차 등 모든 관련 정보를 체계적으로 정리해줘."
+  )
 
-    agent = Agent(
-        task=task,
-        llm=llm,
-        profile=profile,
-        initial_actions=[{"go_to_url": {"url": detail_url}}],
-    )
-    print(f"Extracting detail content from: {detail_url}...")
+  agent = Agent(
+    task=task,
+    llm=llm,
+    profile=profile,
+    initial_actions=[{"go_to_url": {"url": detail_url}}],
+  )
+  print(f"Extracting detail content from: {detail_url}...")
 
-    try:
-        history = await agent.run()
-        scraped_text = history.final_result()
+  try:
+    history = await agent.run()
+    scraped_text = history.final_result()
 
-        if not scraped_text or not scraped_text.strip():
-            print("  -> 에이전트 응답에서 콘텐츠를 찾을 수 없습니다.")
-            return None
-        
-        print("  -> 성공적으로 상세 내용을 텍스트로 추출했습니다. 이제 구조화합니다...")
+    if not scraped_text or not scraped_text.strip():
+      print("  -> 에이전트 응답에서 콘텐츠를 찾을 수 없습니다.")
+      return None
 
-        # LLM을 사용하여 텍스트를 구조화합니다.
-        structured_llm = get_structured_output_model().with_structured_output(JobPosting)
-        
-        prompt = f"""다음 채용 공고 텍스트를 분석해서 JobPosting 객체에 맞는 JSON으로 만들어줘.
+    print("  -> 성공적으로 상세 내용을 텍스트로 추출했습니다. 이제 구조화합니다...")
+
+    # LLM을 사용하여 텍스트를 구조화합니다.
+    structured_llm = get_structured_output_model().with_structured_output(JobPosting)
+
+    prompt = f"""다음 채용 공고 텍스트를 분석해서 JobPosting 객체에 맞는 JSON으로 만들어줘.
 - 'url' 필드는 '{detail_url}' 로 설정해줘.
 - 'title', 'company', 'location' 필드를 텍스트에서 추출해줘.
 - 'description' 필드에는 전체 공고 내용을 마크다운 형식으로 정리해서 넣어줘.
@@ -132,19 +136,19 @@ async def extract_and_structure_job_detail(detail_url: str) -> Optional[JobPosti
 {scraped_text}
 ---
 """
-        
-        job_posting = await structured_llm.ainvoke(prompt)
 
-        if job_posting:
-            print("  -> 성공적으로 상세 내용을 구조화했습니다.")
-            return job_posting
-        else:
-            print("  -> LLM이 텍스트에서 공고 상세 정보를 구조화하지 못했습니다.")
-            return None
+    job_posting = await structured_llm.ainvoke(prompt)
 
-    except Exception as e:
-        print(f"  -> 상세 내용 추출 및 구조화 중 오류 발생: {e}")
-        return None
+    if job_posting:
+      print("  -> 성공적으로 상세 내용을 구조화했습니다.")
+      return job_posting
+    else:
+      print("  -> LLM이 텍스트에서 공고 상세 정보를 구조화하지 못했습니다.")
+      return None
+
+  except Exception as e:
+    print(f"  -> 상세 내용 추출 및 구조화 중 오류 발생: {e}")
+    return None
 
 
 async def collect_and_extract_job_postings(
@@ -184,15 +188,19 @@ async def collect_and_extract_job_postings(
     # 데모를 위해 5개만 실행 (실제 운영 시 이 부분을 조절하세요)
     initial_postings_to_process = unique_postings[:5]
     saved_postings = save_job_postings(initial_postings_to_process)
-    print(f"{len(saved_postings)}개의 채용 공고를 데이터베이스에 저장하고 ID를 부여했습니다.")
+    print(
+      f"{len(saved_postings)}개의 채용 공고를 데이터베이스에 저장하고 ID를 부여했습니다."
+    )
 
     # Step 4: 각 공고의 상세 URL로 접속하여 상세 내용 추출, 구조화 및 업데이트
     for posting in saved_postings:
       try:
         if not posting.id:
-            print(f"  -> 경고: {posting.url} 공고가 저장 후 ID가 없습니다. 상세 정보 처리를 건너뜁니다.")
-            final_results.append(posting)
-            continue
+          print(
+            f"  -> 경고: {posting.url} 공고가 저장 후 ID가 없습니다. 상세 정보 처리를 건너뜁니다."
+          )
+          final_results.append(posting)
+          continue
 
         # 상세 정보 추출 및 구조화
         detailed_posting = await extract_and_structure_job_detail(posting.url)
@@ -204,7 +212,9 @@ async def collect_and_extract_job_postings(
 
           # 파일 저장
           file_path = file_paths.get_job_content_path(filename)
-          success = await file_manager.write_file_async(file_path, detailed_posting.description)
+          success = await file_manager.write_file_async(
+            file_path, detailed_posting.description
+          )
 
           if success:
             # content_doc DB 업데이트
@@ -213,7 +223,7 @@ async def collect_and_extract_job_postings(
             print(
               f"  -> 상세 내용을 {filename}에 저장하고 데이터베이스를 업데이트했습니다."
             )
-            
+
             # 참고: DB에 전체 상세내용(description, posted_at 등)을 업데이트하려면
             # `src/core/database/job_postings.py`에 `update_job_posting(id, data)`와 같은
             # 범용 업데이트 함수가 필요합니다. 현재는 메모리의 객체만 업데이트합니다.

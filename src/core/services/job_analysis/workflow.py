@@ -31,20 +31,12 @@ def build_job_analysis_workflow():
 
 
 async def run_job_analysis(
-  job_url: str,
-  job_title: str,
-  job_company: str,
-  job_description: str = "",
   user_id: str = "",
 ):
   """채용공고 분석을 실행합니다."""
 
   # 초기 상태 설정
   initial_state = JobAnalysisState(
-    job_url=job_url,
-    job_title=job_title,
-    job_company=job_company,
-    job_description=job_description,
     resume_content="",
     detailed_job_info="",
     analysis_result="",

@@ -6,7 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 STRUCTURED_OUTPUT_MODEL = "gemini-2.5-flash-lite-preview-06-17"
 SUMMARIZATION_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 AGENT_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
-CHAT_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+CHAT_MODEL = "gemini-2.5-flash"
 JOB_ANALYSIS_MODEL = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 RESUME_GENERATION_MODEL = "gemini-2.5-flash-lite-preview-06-17"
 
@@ -18,12 +18,11 @@ def get_chat_model():
     check_every_n_seconds=0.25,
     max_bucket_size=3,
   )
-  return ChatDeepInfra(
+  return ChatGoogleGenerativeAI(
     model=CHAT_MODEL,
-    temperature=0.9,
+    temperature=0.75,
     rate_limiter=limiter,
     max_tokens=20000,
-    max_retries=3,
   )
 
 

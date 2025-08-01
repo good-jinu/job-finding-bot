@@ -25,9 +25,9 @@ class JobPostingList(BaseModel):
   """A list of job postings."""
 
   jobs: List[JobPosting] = Field(
-      default_factory=list,
-      description="A list of job posting objects."
+    default_factory=list, description="A list of job posting objects."
   )
+
 
 class JobPostingExtractionState(BaseModel):
   """State for job posting extraction workflow."""
