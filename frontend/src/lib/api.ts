@@ -86,8 +86,12 @@ export const makeResume = async (userId: string, jobTarget: string) => {
 	return response.data;
 };
 
-export const findJobPostings = async (userId: string) => {
-	const response = await apiClient.post(`/users/${userId}/job-postings`);
+export const findJobPostings = async (userId: string, keyword?: string) => {
+	const response = await apiClient.post(
+		`/users/${userId}/job-postings`,
+		{},
+		{ params: { keyword } },
+	);
 	return response.data;
 };
 

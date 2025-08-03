@@ -57,7 +57,7 @@ const Dashboard = () => {
 			setProgress(50);
 
 			// Step 2: Find Job Postings
-			await findJobPostings(selectedUserId);
+			await findJobPostings(selectedUserId, jobTarget);
 			setProgress(80);
 
 			// Step 3: Job Analysis (if needed, or integrate into JobPostingList)

@@ -104,7 +104,9 @@ Generate a comprehensive, well-formatted resume that:
 7. Uses bullet points for achievements and responsibilities
 8. Is concise yet comprehensive
 
-Format the resume in Markdown for clarity."""
+Format the resume in Markdown for clarity.
+file content:
+"""
 
     resume_response = await llm.ainvoke(resume_prompt)
     final_resume = resume_response.content

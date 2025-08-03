@@ -143,12 +143,12 @@ async def make_resume_api(user_id: str, job_target: str):
   return {"resume_path": resume_path}
 
 
-@app.post("/users/{user_id}/job-postings")
-async def find_job_postings_api(user_id: str):
+@app.post("/users/{user_id}/job-postings/{keyword}")
+async def find_job_postings_api(user_id: str, keyword: str | None = None):
   """
   Finds job postings for a user.
   """
-  job_postings = await run_job_search_workflow(user_id)
+  job_postings = await run_job_search_workflow(user_id, keyword=keyword)
   return {"job_postings": job_postings}
 
 

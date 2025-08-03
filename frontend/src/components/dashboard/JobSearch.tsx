@@ -3,12 +3,16 @@ import { useUser } from "../../contexts/UserContext";
 import { findJobPostings } from "../../lib/api";
 import { Button } from "../ui/button";
 
-const JobSearch = () => {
+interface JobSearchProps {
+	keyword?: string;
+}
+
+const JobSearch = ({ keyword }: JobSearchProps) => {
 	const { selectedUserId } = useUser();
 	const queryClient = useQueryClient();
 
 	const mutation = useMutation({
-		mutationFn: () => findJobPostings(selectedUserId as string),
+		mutationFn: () => findJobPostings(selectedUserId as string, keyword),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["jobPostings"] });
 		},

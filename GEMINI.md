@@ -6,9 +6,9 @@ This project is a web application that helps users find jobs, analyze job postin
 
 - **User Management**: Create and manage users.
 - **Resume Management**: Upload and store multiple resume sources for each user.
-- **Job Search**: Search for job postings from various sources.
+- **Job Search**: Search for job postings from various sources using a specified keyword.
 - **Job Analysis**: Analyze how well a user's resume matches a job posting.
-- **Resume Maker**: Generate a new resume tailored to a specific job target.
+- **Resume Maker**: Generate a new resume tailored to a specific job target based on a provided keyword.
 
 ## Tech Stack
 
@@ -78,8 +78,8 @@ The frontend is a React application built with Vite. It provides a user interfac
 
 6. **Upload resume sources** for the selected user.
 
-7. **Find job postings** using the "Find Jobs" button.
+7. **Find job postings** by providing a keyword and using the "Find Jobs" button.
 
 8. **Analyze a job posting** by clicking the "Analyze" button next to it.
 
-9. **Create a new resume** using the "Make Resume" form.
+9. **Create a new resume** by providing a job target keyword using the "Make Resume" form.
