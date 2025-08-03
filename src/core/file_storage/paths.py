@@ -47,6 +47,15 @@ class FileStoragePaths:
     """Directory for resume source files."""
     return self.base_path / "resume_sources"
 
+  @property
+  def discord_uploads_dir(self) -> Path:
+    """Directory for Discord uploaded files."""
+    return self.base_path / "discord_uploads"
+
+  def get_discord_upload_path(self, username: str, filename: str) -> Path:
+    """Get the full path for a Discord uploaded file."""
+    return self.discord_uploads_dir / f"{username}_{filename}"
+
   def get_resume_path(self, filename: str = "resume.md") -> Path:
     """Get the full path for a resume file in the output directory."""
     # 생성된 이력서는 output 디렉토리에 저장되도록 경로 수정

@@ -27,6 +27,7 @@ exclude = [
     "site-packages",
     "venv",
     "__init__.py",
+    "frontend"
 ]
 
 # Same as Black.

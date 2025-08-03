@@ -1,5 +1,6 @@
 from langchain_core.tools import tool
 from langgraph.prebuilt import create_react_agent
+from src.core.services.resume_maker.source import upload_resume
 from src.core.llm.providers import get_chat_model
 from src.core.services.job_analysis.workflow import run_job_analysis
 from src.core.services.job_search.workflow import run_job_search_workflow
@@ -24,7 +25,13 @@ def create_job_finding_agent(user_id: str = ""):
     """Creates a resume based on a user's portfolio and a target job."""
     return await run_resume_maker(job_target, user_id)
 
+  @tool
+  async def upload_resume_source(file_path: str):
+    """Uploads a resume source file."""
+    # This function can be implemented to handle file uploads
+    return await upload_resume(file_path, user_id)
+
   # Define the tools for the agent
-  tools = [job_analysis, job_search, resume_maker]
+  tools = [job_analysis, job_search, resume_maker, upload_resume_source]
   llm = get_chat_model()
   return create_react_agent(llm, tools)

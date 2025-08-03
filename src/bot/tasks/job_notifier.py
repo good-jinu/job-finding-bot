@@ -67,10 +67,6 @@ class JobNotifier(commands.Cog):
 
       # Run job analysis workflow with selected user
       analysis_result = await run_job_analysis(
-        job_url=job.url,
-        job_title=job.title,
-        job_company=job.company,
-        job_description=job.description,
         user_id=selected_user.id,  # Pass the selected user ID
       )
 

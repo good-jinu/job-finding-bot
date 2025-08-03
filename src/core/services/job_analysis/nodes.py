@@ -140,7 +140,7 @@ async def analyze_job_fit_node(state: JobAnalysisState) -> JobAnalysisState:
       {"job_info": state["detailed_job_info"], "resume": state["resume_content"]}
     )
     print("Job analysis completed successfully")
-    state["analysis_result"] = str(result)
+    state["analysis_result"] = str(result.content)
 
   except Exception as e:
     print(f"Error in job analysis: {e}")

@@ -139,9 +139,7 @@ async def save_resume_node(state: ResumeMakerState) -> None:
 async def update_user_resume_file_node(state: ResumeMakerState) -> Dict:
   """Updates the user's resume_file field with the path of the generated resume."""
   try:
-    # Get the resume file path
-    file_paths = FileStoragePaths()
-    resume_path = str(file_paths.get_resume_path(f"{state.user_id}_resume.md"))
+    resume_path = f"{state.user_id}_resume.md"
 
     # Update the user's resume_file field (assuming user_id is available in state)
     if hasattr(state, "user_id") and state.user_id:

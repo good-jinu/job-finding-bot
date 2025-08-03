@@ -4,9 +4,12 @@ from discord.ext import commands
 from src.core.agents.job_finding_agent import create_job_finding_agent
 from src.core.database.users import save_user, get_user_by_id, update_user
 from src.core.schemas.user import User
+from src.core.file_storage.paths import FileStoragePaths
+from src.core.file_storage.file_manager import FileManager
+import aiohttp
 
 # --- Bot Configuration ---
-BOT_COMMAND_PREFIX = "!"
+BOT_COMMAND_PREFIX = "/"
 DISCORD_MESSAGE_LIMIT = 2000
 
 # Initialize the Discord client with necessary intents
@@ -35,11 +38,8 @@ async def send_long_message(channel, content: str):
   if current_chunk:
     chunks.append(current_chunk.strip())
 
-  for i, chunk in enumerate(chunks):
-    if i == 0:
-      await channel.send(chunk)
-    else:
-      await channel.send(f"...\n{chunk}")
+  for chunk in chunks:
+    await channel.send(chunk)
 
 
 @bot.event
@@ -72,12 +72,48 @@ async def on_message(message: discord.Message):
   except Exception as e:
     logger.error(f"Error handling user in database: {e}")
 
+  # Process the first attachment if it exists
+  file_path = None
+  if message.attachments:
+    attachment = message.attachments[0]
+    allowed_extensions = (".pdf", ".docx", ".xlsx", ".txt", ".md", ".pptx", ".html")
+    if attachment.filename.lower().endswith(allowed_extensions):
+      # Use paths.py and file_manager.py for file path and saving
+      paths = FileStoragePaths()
+      file_manager = FileManager(paths)
+      file_path = paths.get_discord_upload_path(
+        message.author.name, attachment.filename
+      )
+      async with aiohttp.ClientSession() as session:
+        async with session.get(attachment.url) as resp:
+          if resp.status == 200:
+            content = await resp.read()
+            # Save file using FileManager
+            if attachment.filename.lower().endswith((".txt", ".md", ".html")):
+              file_manager.write_file_sync(
+                file_path,
+                content.decode("utf-8", errors="ignore")
+              )
+            else:
+              file_manager.write_binary_file(
+                file_path,
+                content
+              )
+          else:
+            await message.channel.send("파일 다운로드 중 오류가 발생했습니다!")
+            return
+
   # Process message with the agent
   if not message.content.startswith(BOT_COMMAND_PREFIX):
     try:
       # Create the job finding agent
       agent_executor = create_job_finding_agent(user_id=message.author.name)
-      response = await agent_executor.ainvoke({"messages": [("user", message.content)]})
+      user_message = (
+        message.content.strip()
+        if file_path is None
+        else f"{message.content.strip()}\nattachment file_path: {file_path}"
+      )
+      response = await agent_executor.ainvoke({"messages": [("user", user_message)]})
       await send_long_message(message.channel, response["messages"][-1].content)
     except Exception as e:
       logger.error(f"An error occurred during agent processing: {e}")

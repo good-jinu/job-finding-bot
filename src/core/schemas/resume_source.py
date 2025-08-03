@@ -13,3 +13,6 @@ class ResumeSource(BaseModel):
   source_file_name: str = Field(
     description="The name or path of the resume source file"
   )
+  original_file_name: str = Field(
+    description="The original name of the uploaded file"
+  )

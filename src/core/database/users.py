@@ -130,3 +130,8 @@ def delete_user(user_id: str):
       (user_id,),
     )
     conn.commit()
+
+if __name__ == "__main__":
+  users = get_all_users()
+  for user in users:
+    print(f"User ID: {user.id}, Name: {user.name}, Resume File: {user.resume_file}") 

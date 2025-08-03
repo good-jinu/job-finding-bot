@@ -21,6 +21,7 @@ def init_resume_sources_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 source_file_name TEXT NOT NULL,
+                original_file_name TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         """)
@@ -34,10 +35,10 @@ def save_resume_source(resume_source: ResumeSource):
     cursor = conn.cursor()
     cursor.execute(
       """
-            INSERT INTO resume_sources (user_id, source_file_name)
-            VALUES (?, ?)
+            INSERT INTO resume_sources (user_id, source_file_name, original_file_name)
+            VALUES (?, ?, ?)
             """,
-      (resume_source.user_id, resume_source.source_file_name),
+      (resume_source.user_id, resume_source.source_file_name, resume_source.original_file_name),
     )
     conn.commit()
     return cursor.lastrowid
@@ -49,7 +50,7 @@ def get_resume_sources_by_user(user_id: str) -> List[ResumeSource]:
     cursor = conn.cursor()
     cursor.execute(
       """
-            SELECT id, user_id, source_file_name
+            SELECT id, user_id, source_file_name, original_file_name
             FROM resume_sources
             WHERE user_id = ?
             """,
@@ -58,7 +59,10 @@ def get_resume_sources_by_user(user_id: str) -> List[ResumeSource]:
     rows = cursor.fetchall()
     return [
       ResumeSource(
-        id=row["id"], user_id=row["user_id"], source_file_name=row["source_file_name"]
+        id=row["id"], 
+        user_id=row["user_id"], 
+        source_file_name=row["source_file_name"],
+        original_file_name=row["original_file_name"]
       )
       for row in rows
     ]
@@ -70,7 +74,7 @@ def get_resume_source_by_id(resume_source_id: int) -> Optional[ResumeSource]:
     cursor = conn.cursor()
     cursor.execute(
       """
-            SELECT id, user_id, source_file_name
+            SELECT id, user_id, source_file_name, original_file_name
             FROM resume_sources
             WHERE id = ?
             """,
@@ -79,9 +83,26 @@ def get_resume_source_by_id(resume_source_id: int) -> Optional[ResumeSource]:
     row = cursor.fetchone()
     if row:
       return ResumeSource(
-        id=row["id"], user_id=row["user_id"], source_file_name=row["source_file_name"]
+        id=row["id"], 
+        user_id=row["user_id"], 
+        source_file_name=row["source_file_name"],
+        original_file_name=row["original_file_name"]
       )
     return None
+
+
+def get_resume_source_content_by_id(resume_source_id: int) -> Optional[str]:
+  """Fetches the content of a resume source by ID."""
+  from src.core.file_storage.file_manager import FileManager
+  from pathlib import Path
+  
+  resume_source = get_resume_source_by_id(resume_source_id)
+  if not resume_source:
+    return None
+  
+  file_manager = FileManager()
+  content = file_manager.read_file_sync(Path(resume_source.source_file_name))
+  return content
 
 
 def delete_resume_source(resume_source_id: int):
