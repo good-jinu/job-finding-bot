@@ -1,5 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import { useUser } from "../../contexts/UserContext";
 import {
 	downloadResumeSource,
@@ -44,34 +52,45 @@ const ResumeSourceList = () => {
 	return (
 		<div className="p-4 border rounded">
 			<h2 className="mb-2 text-lg font-bold">Resume Sources</h2>
-			<ul>
-				{data?.map((source: ResumeSource) => (
-					<li key={source.id} className="flex items-center justify-between">
-						<span>{source.original_file_name}</span>
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={() => mutation.mutate(source.id as number)}
-							disabled={mutation.isPending}
-						>
-							Delete
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={() =>
-								downloadResumeSource(
-									selectedUserId,
-									source.id as number,
-									source.original_file_name,
-								)
-							}
-						>
-							Download
-						</Button>
-					</li>
-				))}
-			</ul>
+			<Table>
+				<TableHeader>
+					<TableRow>
+						<TableHead>File Name</TableHead>
+						<TableHead className="text-right">Actions</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{data?.map((source: ResumeSource) => (
+						<TableRow key={source.id}>
+							<TableCell>{source.original_file_name}</TableCell>
+							<TableCell className="text-right">
+								<Button
+									variant="destructive"
+									size="sm"
+									onClick={() => mutation.mutate(source.id as number)}
+									disabled={mutation.isPending}
+									className="mr-2"
+								>
+									Delete
+								</Button>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										downloadResumeSource(
+											selectedUserId,
+											source.id as number,
+											source.original_file_name,
+										)
+									}
+								>
+									Download
+								</Button>
+							</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+			</Table>
 		</div>
 	);
 };

@@ -38,8 +38,6 @@ def init_users_db():
   print("Users storage initialized successfully.")
 
 
-
-
 def save_user(user: UserCreate) -> User:
   """Saves a single user to the database."""
   with _get_db_connection() as conn:

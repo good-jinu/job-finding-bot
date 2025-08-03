@@ -1,0 +1,15 @@
+src\components\ui\sidebar.tsx:83:4 lint/suspicious/noDocumentCookie ━━━━━━━━━━
+
+  ! Direct assigning to document.cookie is not recommended.
+
+    82 │                        // This sets the cookie to keep the sidebar state.
+  > 83 │                        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+       │                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    84 │                },
+    85 │                [setOpenProp, open],
+
+  i Consider using the Cookie Store API.
+
+
+Checked 41 files in 73ms. No fixes applied.
+Found 1 warning.
