@@ -26,10 +26,10 @@ def create_job_finding_agent(user_id: str = ""):
     return await run_resume_maker(job_target, user_id)
 
   @tool
-  async def upload_resume_source(file_path: str):
+  async def upload_resume_source(file_path: str, file_name: str):
     """Uploads a resume source file."""
     # This function can be implemented to handle file uploads
-    return await upload_resume(file_path, user_id)
+    return await upload_resume(file_path, file_name, user_id)
 
   # Define the tools for the agent
   tools = [job_analysis, job_search, resume_maker, upload_resume_source]

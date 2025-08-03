@@ -32,10 +32,11 @@ def get_resume_content_node(state: JobSearchState) -> JobSearchState:
     return state
 
   try:
-    resume_content = file_manager.read_file_sync(user.resume_file)
+    file_path = file_paths.get_resume_path(user.resume_file)
+    resume_content = file_manager.read_file_sync(file_path)
     if resume_content:
       state["resume_content"] = resume_content
-      print(f"Successfully loaded resume for user {user.name} from {user.resume_file}")
+      print(f"Successfully loaded resume for user {user.name} from {file_path}")
     else:
       state["resume_content"] = None
       print(f"Resume file content is empty or could not be read: {user.resume_file}")

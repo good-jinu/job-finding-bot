@@ -48,13 +48,13 @@ class FileStoragePaths:
     return self.base_path / "resume_sources"
 
   @property
-  def discord_uploads_dir(self) -> Path:
-    """Directory for Discord uploaded files."""
-    return self.base_path / "discord_uploads"
+  def uploads_dir(self) -> Path:
+    """Directory for uploaded files."""
+    return self.base_path / "uploads"
 
-  def get_discord_upload_path(self, username: str, filename: str) -> Path:
-    """Get the full path for a Discord uploaded file."""
-    return self.discord_uploads_dir / f"{username}_{filename}"
+  def get_upload_path(self, username: str, filename: str) -> Path:
+    """Get the full path for an uploaded file."""
+    return self.uploads_dir / f"{username}_{filename}"
 
   def get_resume_path(self, filename: str = "resume.md") -> Path:
     """Get the full path for a resume file in the output directory."""

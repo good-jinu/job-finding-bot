@@ -1,6 +1,7 @@
 import sqlite3
+import uuid
 from typing import List, Optional
-from src.core.schemas.user import User
+from src.core.schemas.user import User, UserCreate
 from src.core.database.config import DB_FILE
 
 
@@ -37,19 +38,22 @@ def init_users_db():
   print("Users storage initialized successfully.")
 
 
-def save_user(user: User):
+
+
+def save_user(user: UserCreate) -> User:
   """Saves a single user to the database."""
   with _get_db_connection() as conn:
     cursor = conn.cursor()
+    user_id = str(uuid.uuid4())
     cursor.execute(
       """
             INSERT INTO users (id, name, resume_file)
             VALUES (?, ?, ?)
             """,
-      (user.id, user.name, user.resume_file),
+      (user_id, user.name, user.resume_file),
     )
     conn.commit()
-    return cursor.lastrowid
+    return get_user_by_id(user_id)
 
 
 def get_user_by_id(user_id: str) -> Optional[User]:
@@ -131,7 +135,8 @@ def delete_user(user_id: str):
     )
     conn.commit()
 
+
 if __name__ == "__main__":
   users = get_all_users()
   for user in users:
-    print(f"User ID: {user.id}, Name: {user.name}, Resume File: {user.resume_file}") 
+    print(f"User ID: {user.id}, Name: {user.name}, Resume File: {user.resume_file}")

@@ -60,19 +60,19 @@ class FileManager:
       with open(file_path, "w", encoding="utf-8") as f:
         f.write(content)
       return True
-    except Exception as e:  
+    except Exception as e:
       print(f"Error writing file {file_path}: {e}")
       return False
 
   def write_binary_file(self, file_path: Path, content: bytes) -> bool:
-      try:
-          file_path.parent.mkdir(parents=True, exist_ok=True)
-          with open(file_path, "wb") as f:
-              f.write(content)
-          return True
-      except Exception as e:
-          print(f"Error writing binary file {file_path}: {e}")
-          return False
+    try:
+      file_path.parent.mkdir(parents=True, exist_ok=True)
+      with open(file_path, "wb") as f:
+        f.write(content)
+      return True
+    except Exception as e:
+      print(f"Error writing binary file {file_path}: {e}")
+      return False
 
   def file_exists(self, file_path: Path) -> bool:
     """Check if file exists."""

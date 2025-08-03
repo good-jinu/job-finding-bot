@@ -38,7 +38,11 @@ def save_resume_source(resume_source: ResumeSource):
             INSERT INTO resume_sources (user_id, source_file_name, original_file_name)
             VALUES (?, ?, ?)
             """,
-      (resume_source.user_id, resume_source.source_file_name, resume_source.original_file_name),
+      (
+        resume_source.user_id,
+        resume_source.source_file_name,
+        resume_source.original_file_name,
+      ),
     )
     conn.commit()
     return cursor.lastrowid
@@ -59,10 +63,10 @@ def get_resume_sources_by_user(user_id: str) -> List[ResumeSource]:
     rows = cursor.fetchall()
     return [
       ResumeSource(
-        id=row["id"], 
-        user_id=row["user_id"], 
+        id=row["id"],
+        user_id=row["user_id"],
         source_file_name=row["source_file_name"],
-        original_file_name=row["original_file_name"]
+        original_file_name=row["original_file_name"],
       )
       for row in rows
     ]
@@ -83,10 +87,10 @@ def get_resume_source_by_id(resume_source_id: int) -> Optional[ResumeSource]:
     row = cursor.fetchone()
     if row:
       return ResumeSource(
-        id=row["id"], 
-        user_id=row["user_id"], 
+        id=row["id"],
+        user_id=row["user_id"],
         source_file_name=row["source_file_name"],
-        original_file_name=row["original_file_name"]
+        original_file_name=row["original_file_name"],
       )
     return None
 
@@ -95,11 +99,11 @@ def get_resume_source_content_by_id(resume_source_id: int) -> Optional[str]:
   """Fetches the content of a resume source by ID."""
   from src.core.file_storage.file_manager import FileManager
   from pathlib import Path
-  
+
   resume_source = get_resume_source_by_id(resume_source_id)
   if not resume_source:
     return None
-  
+
   file_manager = FileManager()
   content = file_manager.read_file_sync(Path(resume_source.source_file_name))
   return content
@@ -116,6 +120,11 @@ def delete_resume_source(resume_source_id: int):
       (resume_source_id,),
     )
     conn.commit()
+
+
+def remove_resume_source(resume_source_id: int):
+  """Deletes a resume source by ID and its associated file."""
+  delete_resume_source(resume_source_id)
 
 
 if __name__ == "__main__":

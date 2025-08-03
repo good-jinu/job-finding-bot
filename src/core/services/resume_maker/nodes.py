@@ -4,21 +4,20 @@ from src.core.file_storage.file_manager import FileManager
 from src.core.file_storage.paths import FileStoragePaths
 from src.core.llm.providers import get_resume_generation_model
 from src.core.database.users import update_user
+from src.core.database.resume_sources import get_resume_sources_by_user
+from pathlib import Path
 
 
 async def load_resume_sources_node(state: ResumeMakerState) -> Dict:
-  """Load source file names from resume_sources directory."""
+  """Load source file names from the database for the given user."""
   try:
-    paths = FileStoragePaths()
-    resume_sources_dir = paths.resume_sources_dir
-    source_files = []
+    if not state.user_id:
+      raise ValueError("User ID is required to load resume sources.")
 
-    if resume_sources_dir.exists():
-      for file_path in resume_sources_dir.iterdir():
-        if file_path.is_file():
-          source_files.append(file_path)  # 전체 경로 저장
+    resume_sources = get_resume_sources_by_user(state.user_id)
+    source_files = [Path(rs.source_file_name) for rs in resume_sources]
 
-    print(f"Loaded {len(source_files)} source files.")
+    print(f"Loaded {len(source_files)} source files for user {state.user_id}.")
     return {"source_files": source_files}
 
   except Exception as e:

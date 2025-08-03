@@ -81,9 +81,7 @@ async def on_message(message: discord.Message):
       # Use paths.py and file_manager.py for file path and saving
       paths = FileStoragePaths()
       file_manager = FileManager(paths)
-      file_path = paths.get_discord_upload_path(
-        message.author.name, attachment.filename
-      )
+      file_path = paths.get_upload_path(message.author.name, attachment.filename)
       async with aiohttp.ClientSession() as session:
         async with session.get(attachment.url) as resp:
           if resp.status == 200:
@@ -91,14 +89,10 @@ async def on_message(message: discord.Message):
             # Save file using FileManager
             if attachment.filename.lower().endswith((".txt", ".md", ".html")):
               file_manager.write_file_sync(
-                file_path,
-                content.decode("utf-8", errors="ignore")
+                file_path, content.decode("utf-8", errors="ignore")
               )
             else:
-              file_manager.write_binary_file(
-                file_path,
-                content
-              )
+              file_manager.write_binary_file(file_path, content)
           else:
             await message.channel.send("파일 다운로드 중 오류가 발생했습니다!")
             return
